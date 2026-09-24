@@ -1,0 +1,54 @@
+name: Weather alert
+
+on:
+  schedule:
+    # Runs at 06:00 Turkey time. Cron is in UTC and Turkey is UTC+3 all year
+    # (no daylight saving), so 02:55 UTC. Set 5 minutes early because GitHub
+    # usually starts scheduled runs a few minutes late.
+    - cron: "55 2 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Send a notification even if there are no alerts"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: write  # needed for the keep-alive step below
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check the weather
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          # these are optional, set them under Settings > Variables if you want
+          LANGUAGE: ${{ vars.LANGUAGE }}
+          CITY_NAME: ${{ vars.CITY_NAME }}
+          LATITUDE: ${{ vars.LATITUDE }}
+          LONGITUDE: ${{ vars.LONGITUDE }}
+          TIMEZONE: ${{ vars.TIMEZONE }}
+        run: |
+          if [ "${{ inputs.force }}" = "true" ]; then
+            python main.py --force
+          else
+            python main.py
+          fi
+
+      # GitHub turns off scheduled workflows on public repos after 60 days
+      # without activity. Re-enabling counts as activity, so doing it on every
+      # run keeps the schedule alive forever.
+      - name: Keep the schedule alive
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow enable weather-alert.yml
