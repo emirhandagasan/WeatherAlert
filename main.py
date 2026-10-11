@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 import config
 import messages
 import notify
+import state
 import weather
 
 
@@ -21,14 +22,22 @@ def main():
         return 1
 
     alerts = weather.find_alerts(forecast, from_hour=now.hour)
+
+    # only send what wasn't sent before
+    today = now.strftime("%Y-%m-%d")
+    sent = state.load(today)
+    is_update = bool(sent)
+    if not force:
+        alerts = [a for a in alerts if state.is_new(a, sent)]
+
     high = forecast["daily"]["temperature_2m_max"][0]
     low = forecast["daily"]["temperature_2m_min"][0]
 
     if not alerts and not force:
-        print("Nothing to report today.")
+        print("Nothing new to report.")
         return 0
 
-    title, body, priority = messages.build_message(alerts, high, low, now)
+    title, body, priority = messages.build_message(alerts, high, low, now, is_update)
 
     if dry_run:
         print(f"[{priority}] {title}")
@@ -40,6 +49,9 @@ def main():
     except Exception as e:
         print("Could not send the notification:", e)
         return 1
+
+    state.remember(alerts, sent)
+    state.save(today, sent)
 
     print("Sent:", title)
     return 0

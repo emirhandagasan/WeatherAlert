@@ -3,11 +3,12 @@ import urllib.request
 
 import config
 
-# weather codes from open-meteo (WMO codes)
+# weather codes from open-meteo (WMO codes), mildest first
 THUNDERSTORM = [95, 96, 99]
 HAIL = [96, 99]
-SNOW = [71, 73, 75, 77, 85, 86]
-RAIN = [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82]
+SNOW = [77, 71, 85, 73, 75, 86]
+RAIN = [51, 53, 55, 56, 57, 61, 80, 63, 81, 66, 67, 65, 82]
+CODES = {"thunderstorm": THUNDERSTORM, "hail": HAIL, "snow": SNOW, "rain": RAIN}
 
 # order they show up in the message
 ORDER = ["thunderstorm", "hail", "snow", "rain", "wind"]
@@ -61,21 +62,28 @@ def find_alerts(forecast, from_hour):
         rain_mm = hourly["precipitation"][i] or 0
         rain_chance = hourly["precipitation_probability"][i] or 0
         gust = hourly["wind_gusts_10m"][i] or 0
-        types = check_hour(hourly["weather_code"][i], rain_mm, rain_chance, gust)
+        code = hourly["weather_code"][i]
+        types = check_hour(code, rain_mm, rain_chance, gust)
 
-        # close the ones that stopped this hour
+        # close the ones that stopped (a 1 hour gap is fine)
         for t in list(active):
-            if t not in types:
+            if t not in types and hour - active[t]["end"] > 1:
                 alerts.append(active.pop(t))
 
         for t in types:
             if t not in active:
-                active[t] = {"type": t, "start": hour, "end": hour, "mm": 0, "chance": 0, "gust": 0}
+                active[t] = {"type": t, "start": hour, "end": hour, "code": None,
+                             "mm": 0, "chance": 0, "gust": 0}
             a = active[t]
             a["end"] = hour
             a["mm"] = max(a["mm"], rain_mm)
             a["chance"] = max(a["chance"], rain_chance)
             a["gust"] = max(a["gust"], gust)
+
+            # keep the worst code of the block, the message is built from it
+            codes = CODES.get(t, [])
+            if code in codes and (a["code"] is None or codes.index(code) > codes.index(a["code"])):
+                a["code"] = code
 
     alerts += active.values()
     alerts.sort(key=lambda a: (ORDER.index(a["type"]), a["start"]))

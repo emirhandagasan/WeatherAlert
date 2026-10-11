@@ -14,6 +14,9 @@ LANGUAGE = os.getenv("LANGUAGE") or "en"
 NTFY_SERVER = os.getenv("NTFY_SERVER") or "https://ntfy.sh"
 NTFY_TOPIC = os.getenv("NTFY_TOPIC") or ""
 
+# what was already sent today
+STATE_FILE = os.getenv("STATE_FILE") or "state.json"
+
 # when does it count as an alert
 WIND_LIMIT = 60      # km/h gusts
 RAIN_CHANCE = 60     # percent
