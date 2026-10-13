@@ -99,42 +99,43 @@ def find_alerts(forecast, from_hour):
         gust = hourly["wind_gusts_10m"][i] or 0
         code = hourly["weather_code"][i]
         types = check_hour(code, rain_mm, rain_chance, gust)
-
-        # (type, unsure) -> code
-        found = {(t, False): code for t in types}
+        found = {t: code for t in types}
 
         # main forecast is dry, see what the other models say
+        unsure = {}
         if not set(types) & CODES.keys():
-            for t, c in check_models(models, i).items():
-                found[(t, True)] = c
+            unsure = check_models(models, i)
 
         # close the ones that stopped (a 1 hour gap is fine)
-        for key in list(active):
-            if key not in found and hour - active[key]["end"] > 1:
-                alerts.append(active.pop(key))
+        for t in list(active):
+            if t not in found and t not in unsure and hour - active[t]["end"] > 1:
+                alerts.append(active.pop(t))
 
-        for key, c in found.items():
-            t, unsure = key
-            if key not in active:
-                active[key] = {"type": t, "start": hour, "end": hour, "code": None,
-                               "unsure": unsure, "mm": 0, "chance": 0, "gust": 0}
-            a = active[key]
+        for t in list(found) + list(unsure):
+            if t not in active:
+                active[t] = {"type": t, "start": hour, "end": hour, "code": None, "model_code": None,
+                             "unsure": True, "mm": 0, "chance": 0, "gust": 0}
+            a = active[t]
             a["end"] = hour
             a["mm"] = max(a["mm"], rain_mm)
             a["chance"] = max(a["chance"], rain_chance)
             a["gust"] = max(a["gust"], gust)
 
             # keep the worst code of the block, the message is built from it
+            key = "code" if t in found else "model_code"
+            c = found.get(t, unsure.get(t))
             order = CODES.get(t, [])
-            if c in order and (a["code"] is None or order.index(c) > order.index(a["code"])):
-                a["code"] = c
+            if c in order and (a[key] is None or order.index(c) > order.index(a[key])):
+                a[key] = c
+            if t in found:
+                a["unsure"] = False
 
     alerts += active.values()
 
-    # drop the unsure ones that touch a sure block, they only add noise
-    sure = [a for a in alerts if not a["unsure"] and a["type"] in CODES]
-    alerts = [a for a in alerts if not a["unsure"] or not any(
-        s["start"] - 1 <= a["end"] and a["start"] <= s["end"] + 1 for s in sure)]
+    # blocks that only the other models see
+    for a in alerts:
+        if a["unsure"]:
+            a["code"] = a["model_code"]
 
     alerts.sort(key=lambda a: (ORDER.index(a["type"]), a["start"]))
     return alerts

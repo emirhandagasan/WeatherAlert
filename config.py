@@ -17,6 +17,9 @@ NTFY_TOPIC = os.getenv("NTFY_TOPIC") or ""
 # what was already sent today
 STATE_FILE = os.getenv("STATE_FILE") or "state.json"
 
+# night runs don't send right away, ntfy delivers at this hour
+FIRST_HOUR = 6
+
 # when does it count as an alert
 WIND_LIMIT = 60      # km/h gusts
 RAIN_CHANCE = 60     # percent

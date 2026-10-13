@@ -15,13 +15,20 @@ def main():
 
     now = datetime.now(ZoneInfo(config.TIMEZONE))
 
+    # at night, look at the day from the morning on and send it then
+    from_hour = now.hour
+    send_at = None
+    if now.hour < config.FIRST_HOUR and not force:
+        from_hour = config.FIRST_HOUR
+        send_at = now.replace(hour=config.FIRST_HOUR, minute=0, second=0, microsecond=0)
+
     try:
         forecast = weather.get_forecast()
     except Exception as e:
         print("Could not get the forecast:", e)
         return 1
 
-    alerts = weather.find_alerts(forecast, from_hour=now.hour)
+    alerts = weather.find_alerts(forecast, from_hour=from_hour)
 
     # only send what wasn't sent before
     today = now.strftime("%Y-%m-%d")
@@ -40,12 +47,14 @@ def main():
     title, body, priority = messages.build_message(alerts, high, low, now, is_update)
 
     if dry_run:
+        if send_at:
+            print("Would be sent at", send_at.strftime("%H:%M"))
         print(f"[{priority}] {title}")
         print(body)
         return 0
 
     try:
-        notify.send(title, body, priority)
+        notify.send(title, body, priority, send_at)
     except Exception as e:
         print("Could not send the notification:", e)
         return 1

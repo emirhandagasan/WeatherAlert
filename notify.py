@@ -7,7 +7,7 @@ import config
 PRIORITY = {"low": 2, "default": 3, "high": 4}
 
 
-def send(title, body, priority):
+def send(title, body, priority, send_at=None):
     if not config.NTFY_TOPIC:
         raise Exception("NTFY_TOPIC is not set")
 
@@ -18,6 +18,10 @@ def send(title, body, priority):
         "priority": PRIORITY[priority],
         "tags": ["warning"],
     }
+    if send_at:
+        # ntfy keeps the message and delivers it at this time
+        data["delay"] = str(int(send_at.timestamp()))
+
     request = urllib.request.Request(
         config.NTFY_SERVER,
         data=json.dumps(data).encode("utf-8"),

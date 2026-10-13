@@ -2,15 +2,18 @@ name: Weather alert
 
 on:
   schedule:
-    # Every 2 hours, 06:00-22:00 Turkey time (UTC+3).
-    # 5 minutes early because GitHub starts runs a bit late.
-    - cron: "55 2-18/2 * * *"
+    # Every hour. GitHub runs these late and skips many of them.
+    # Night runs leave the message at ntfy to be delivered at 06:00.
+    - cron: "17 * * * *"
   workflow_dispatch:
     inputs:
       force:
         description: "Send a notification even if there are no alerts"
         type: boolean
         default: false
+
+# one run at a time, so the same alert isn't sent twice
+concurrency: weather-alert
 
 permissions:
   contents: read

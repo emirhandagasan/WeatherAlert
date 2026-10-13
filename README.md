@@ -2,7 +2,7 @@
 
 I kept getting caught in the rain, so I wrote this. Every morning at 06:00 (Turkey time, UTC+3) it looks at the day's forecast for Istanbul and sends a push notification to my phone if there is rain, snow, hail, a thunderstorm or strong wind coming, with the hours. If the day looks fine it doesn't send anything.
 
-Forecasts change during the day, so it checks again every 2 hours until 22:00. Those later runs stay quiet unless something new showed up, for example rain at 17:00 that wasn't in the forecast in the morning. Then you get a "Weather update" with just the new part.
+It keeps checking during the day. If the forecast changes and new rain shows up, you get a "Weather update".
 
 It runs on GitHub Actions for free, gets the forecast from [Open-Meteo](https://open-meteo.com) and sends the notification with [ntfy](https://ntfy.sh). No API keys, no accounts, plain Python.
 
@@ -85,17 +85,19 @@ CITY_NAME=Ankara LATITUDE=39.9334 LONGITUDE=32.8597 python main.py --dry-run --f
 ## Changing other things
 
 - Wind and rain limits are in `config.py`.
-- The times it runs are the cron line in `.github/workflows/weather-alert.yml`. GitHub cron is in UTC and Turkey is UTC+3 all year (no daylight saving), so `55 2-18/2 * * *` means every 2 hours from 05:55 to 21:55 Turkey time. It's set 5 minutes early because GitHub usually starts scheduled jobs a few minutes late, so in practice the first one lands around 06:00. To start at 07:00 you would write `55 3-18/2 * * *`.
+- The morning time is `FIRST_HOUR` in `config.py`.
+
+GitHub often starts scheduled jobs hours late, so the script runs every hour and doesn't wait for 06:00. A run during the night hands the message to ntfy, and ntfy delivers it at 06:00.
 
 ## What counts as an alert
 
 - Thunderstorm, hail or snow. These are sent as high priority so they make more noise on the phone.
 - Rain, or at least a 60% chance of 0.5 mm/h or more.
 - Wind gusts of 60 km/h or more.
-- Rain or snow that the main forecast doesn't show but at least 2 of 7 other weather models do. A single model misses light rain now and then. These lines say "possible".
+- Rain or snow that the main forecast misses but at least 2 other weather models show.
 
-The messages use words instead of numbers. The wording comes straight from the WMO weather code of the forecast, so "light rain", "moderate rain showers" and so on mean what they mean in a weather report. Wind is named by the Beaufort scale using the gust speed. If the chance is under 50% the line says "possible".
+The messages use the same words as a weather report, like "light rain" or "moderate rain showers". If it's not certain, the line says "possible".
 
 Hours that already passed are skipped, so if you run it at noon you only get the afternoon.
 
-What was already sent is kept in `state.json` (saved between runs with the GitHub Actions cache), so the same alert isn't sent twice. An alert counts as new when it covers hours that aren't next to anything sent earlier that day. A block that only moved by an hour is not sent again.
+The same alert is never sent twice in a day.
