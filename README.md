@@ -92,6 +92,7 @@ CITY_NAME=Ankara LATITUDE=39.9334 LONGITUDE=32.8597 python main.py --dry-run --f
 - Thunderstorm, hail or snow. These are sent as high priority so they make more noise on the phone.
 - Rain, or at least a 60% chance of 0.5 mm/h or more.
 - Wind gusts of 60 km/h or more.
+- Rain or snow that the main forecast doesn't show but at least 2 of 7 other weather models do. A single model misses light rain now and then. These lines say "possible".
 
 The messages use words instead of numbers. The wording comes straight from the WMO weather code of the forecast, so "light rain", "moderate rain showers" and so on mean what they mean in a weather report. Wind is named by the Beaufort scale using the gust speed. If the chance is under 50% the line says "possible".
 

@@ -21,3 +21,8 @@ STATE_FILE = os.getenv("STATE_FILE") or "state.json"
 WIND_LIMIT = 60      # km/h gusts
 RAIN_CHANCE = 60     # percent
 RAIN_AMOUNT = 0.5    # mm per hour
+
+# extra models, they catch rain the main forecast misses
+MODELS = ["icon_seamless", "ecmwf_ifs025", "gfs_seamless", "meteofrance_seamless",
+          "gem_seamless", "ukmo_seamless", "jma_seamless"]
+MODEL_AGREE = 2      # how many of them have to agree

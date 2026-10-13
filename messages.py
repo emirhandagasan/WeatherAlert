@@ -118,7 +118,7 @@ def describe(alert):
     else:
         what = text("codes").get(alert["code"], text(kind))
 
-    if alert["chance"] < LOW_CHANCE:
+    if alert.get("unsure") or alert["chance"] < LOW_CHANCE:
         what = text("maybe").format(what)
     return what
 
