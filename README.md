@@ -1,10 +1,10 @@
 # WeatherAlert
 
-I kept getting caught in the rain, so I wrote this. Every morning at 06:00 (Turkey time, UTC+3) it looks at the day's forecast for Istanbul and sends a push notification to my phone if there is rain, snow, hail, a thunderstorm or strong wind coming, with the hours. If the day looks fine it doesn't send anything.
+A small tool that warns you about bad weather before you leave the house. Every morning at 06:00 it looks at the day's forecast and sends a notification to your phone if rain, snow, hail, a thunderstorm or strong wind is coming, with the hours. If the day looks fine it doesn't send anything.
 
 It keeps checking during the day. If the forecast changes and new rain shows up, you get a "Weather update".
 
-It runs on GitHub Actions for free, gets the forecast from [Open-Meteo](https://open-meteo.com) and sends the notification with [ntfy](https://ntfy.sh). No API keys, no accounts, plain Python.
+It runs on GitHub for free, gets the forecast from [Open-Meteo](https://open-meteo.com) and sends the notification with [ntfy](https://ntfy.sh). You don't need a server or any API keys. The default location is Istanbul, but you can set any place.
 
 What a notification looks like:
 
@@ -26,10 +26,14 @@ En yüksek 24°C / En düşük 17°C
 
 ## Setting it up
 
+You only need a GitHub account and a phone.
+
 1. Install the ntfy app on your phone and subscribe to a topic. Pick a name nobody would guess, something like `weather-alert-k3j9x2m4`. Anyone who knows the name can send you messages, so treat it like a password.
-2. Push this repo to GitHub. Public or private, both work.
-3. In the repo go to Settings > Secrets and variables > Actions and add a secret named `NTFY_TOPIC` with your topic name.
-4. Go to Actions > Weather alert > Run workflow, tick the "force" box and run it. You should get a notification within a minute.
+2. Fork this repo with the **Fork** button at the top of this page.
+3. In your fork open the **Actions** tab and click the button to enable workflows. GitHub turns them off in forks until you do this.
+4. Go to Settings > Secrets and variables > Actions and add a secret named `NTFY_TOPIC` with your topic name.
+5. If you don't live in Istanbul, set your location (see [Changing the location](#changing-the-location)).
+6. Go to Actions > Weather alert > Run workflow, tick the "force" box and run it. You should get a notification within a minute.
 
 Done, it runs on its own from now on.
 
@@ -94,7 +98,7 @@ GitHub often starts scheduled jobs hours late, so the script runs every hour and
 - Thunderstorm, hail or snow. These are sent as high priority so they make more noise on the phone.
 - Rain, or at least a 60% chance of 0.5 mm/h or more.
 - Wind gusts of 60 km/h or more.
-- Rain or snow that the main forecast misses but at least 2 other weather models show.
+- Rain or snow that the main forecast misses but at least 3 other weather models show.
 
 The messages use the same words as a weather report, like "light rain" or "moderate rain showers". If it's not certain, the line says "possible".
 
